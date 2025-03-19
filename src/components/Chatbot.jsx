@@ -17,6 +17,39 @@ const Chatbot = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const chatContainerRef = useRef(null);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  // Responsive chatbot styles
+  const chatbotStyle = {
+    maxWidth: "100%", // Take full width
+    width: "450px", // Default width for laptops
+    height: "80vh", // Adjust height
+    margin: "auto",
+    display: "flex",
+    flexDirection: "column",
+    borderRadius: "20px",
+    overflow: "hidden",
+    boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+    backgroundColor: isDarkMode ? "#1a1a1a" : "white",
+    transition: "all 0.3s ease-in-out",
+  };
+
+  // Mobile-specific styles
+  const mobileStyle = {
+    width: "100%", // Full width on mobile
+    height: "100vh", // Take full height
+    borderRadius: "0px", // Remove rounded corners on mobile
+  };
+
+  // Handle window resize for responsiveness
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const savedMode = localStorage.getItem("darkMode") === "true";
@@ -27,7 +60,7 @@ const Chatbot = () => {
     localStorage.setItem("darkMode", isDarkMode);
   }, [isDarkMode]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     const message = input.trim();
     if (!message) return;
 
@@ -35,24 +68,39 @@ const Chatbot = () => {
     setInput("");
     setIsTyping(true);
 
-    setTimeout(() => {
-      handleBotResponse(message);
-    }, 1000);
+    try {
+      // Send the message to backend API
+      const response = await fetchChatResponse(message);
+      
+      setTimeout(() => {
+        setMessages((prev) => [...prev, { text: response.message, isUser: false }]);
+        setIsTyping(false);
+      }, 1000);
+    } catch (error) {
+      console.error("Error getting response:", error);
+      setTimeout(() => {
+        setMessages((prev) => [...prev, { text: "Sorry, I'm having trouble connecting to the server.", isUser: false }]);
+        setIsTyping(false);
+      }, 1000);
+    }
   };
 
-  const handleBotResponse = (userMessage) => {
-    let response = "Sorry, I didn't understand that.";
-    const lowerMessage = userMessage.toLowerCase();
-
-    if (lowerMessage.includes("order") || lowerMessage.includes("status")) response = "You can track your order using your order ID.";
-    else if (lowerMessage.includes("refund")) response = "Refunds take 5-7 business days.";
-    else if (lowerMessage.includes("return")) response = "To return an order, go to your order history and select 'Return'.";
-    else if (lowerMessage.includes("label")) response = "To generate a return label, visit the returns section in your account.";
-
-    setTimeout(() => {
-      setMessages((prev) => [...prev, { text: response, isUser: false }]);
-      setIsTyping(false);
-    }, 1000);
+  const handleOrderQuery = async (orderId) => {
+    try {
+      // Fetch specific order information
+      const orderData = await fetchOrderStatus(orderId);
+      
+      setTimeout(() => {
+        setMessages((prev) => [...prev, { text: `Order #${orderId}: ${orderData.status}. ${orderData.details}`, isUser: false }]);
+        setIsTyping(false);
+      }, 1000);
+    } catch (error) {
+      console.error("Error fetching order:", error);
+      setTimeout(() => {
+        setMessages((prev) => [...prev, { text: "Sorry, I couldn't find information about that order.", isUser: false }]);
+        setIsTyping(false);
+      }, 1000);
+    }
   };
 
   useEffect(() => {
@@ -61,27 +109,11 @@ const Chatbot = () => {
     }
   }, [messages]);
 
-  
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      style={{
-        width: "100%",
-        maxWidth: "450px",
-        margin: "auto",
-        padding: "0px",
-        display: "flex",
-        flexDirection: "column",
-        height: "85vh",
-        borderRadius: "20px",
-        overflow: "hidden",
-        background: isDarkMode ? "#1a1a1a" : "#ffffff",
-        position: "relative",
-        transition: "all 0.3s ease-in-out",
-        boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
-      }}
+      style={isMobile ? { ...chatbotStyle, ...mobileStyle } : chatbotStyle}
     >
       {/* Header */}
       <div
@@ -204,54 +236,54 @@ const Chatbot = () => {
 
       {/* Quick Actions */}
       <div style={{ 
-      padding: "2px 10px", 
-      background: isDarkMode ? "#2d2d2d" : "#f8f9fa",
-      borderTop: "1px solid rgba(0,0,0,0.1)",
-    }}>
-      <p style={{ 
-        marginBottom: "5px", 
-        color: isDarkMode ? "#ddd" : "#333",
-        fontSize: "1rem",
-        textAlign: "center",
-        fontWeight: "500"
+        padding: "2px 10px", 
+        background: isDarkMode ? "#2d2d2d" : "#f8f9fa",
+        borderTop: "1px solid rgba(0,0,0,0.1)",
       }}>
-      </p>
+        <p style={{ 
+          marginBottom: "5px", 
+          color: isDarkMode ? "#ddd" : "#333",
+          fontSize: "1rem",
+          textAlign: "center",
+          fontWeight: "500"
+        }}>
+        </p>
 
-      {/* Horizontal Scrollable Buttons */}
-      <div style={{
-        display: "flex",
-        gap: "6px",
-        overflowX: "auto",
-        whiteSpace: "nowrap",
-        paddingBottom: "5px",
-        scrollbarWidth: "none",
-        msOverflowStyle: "none"
-      }}>
-        {predefinedMessages.map((msg, index) => (
-          <motion.button
-            key={index}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setInput(msg)}
-            style={{
-              border: "none",
-              borderRadius: "15px",
-              padding: "6px 12px",
-              background: isDarkMode ? "#404040" : "#e9ecef",
-              color: isDarkMode ? "#fff" : "#333",
-              cursor: "pointer",
-              fontSize: "14px",
-              fontFamily: "Söhne, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif",
-              transition: "all 0.2s ease",
-              flexShrink: 0
-            }}
-          >
-            {msg}
-          </motion.button>
-        ))}
+        {/* Horizontal Scrollable Buttons */}
+        <div style={{
+          display: "flex",
+          gap: "6px",
+          overflowX: "auto",
+          whiteSpace: "nowrap",
+          paddingBottom: "5px",
+          scrollbarWidth: "none",
+          msOverflowStyle: "none"
+        }}>
+          {predefinedMessages.map((msg, index) => (
+            <motion.button
+              key={index}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setInput(msg)}
+              style={{
+                border: "none",
+                borderRadius: "15px",
+                padding: "6px 12px",
+                background: isDarkMode ? "#404040" : "#e9ecef",
+                color: isDarkMode ? "#fff" : "#333",
+                cursor: "pointer",
+                fontSize: "14px",
+                fontFamily: "Söhne, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif",
+                transition: "all 0.2s ease",
+                flexShrink: 0
+              }}
+            >
+              {msg}
+            </motion.button>
+          ))}
+        </div>
       </div>
-    </div>
-    
+      
       {/* Input Box */}
       <div style={{ 
         display: "flex", 
@@ -266,14 +298,14 @@ const Chatbot = () => {
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
           placeholder="Type your message..."
           style={{
-            flex: "1",
+            width: "100%", /* Take full width */
             padding: "12px 15px",
             border: "1px solid rgba(0,0,0,0.1)",
             borderRadius: "25px",
             outline: "none",
             backgroundColor: isDarkMode ? "#404040" : "#fff",
             color: isDarkMode ? "#fff" : "#333",
-            fontSize: "16px",
+            fontSize: "16px", /* Bigger text for touch screens */
             fontFamily: "Söhne, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif",
             transition: "all 0.3s ease",
           }}
@@ -289,7 +321,7 @@ const Chatbot = () => {
             padding: "12px 20px",
             cursor: "pointer",
             borderRadius: "25px",
-            fontSize: "14px",
+            fontSize: "16px", /* Increased font size */
             fontWeight: "600",
             transition: "all 0.3s ease",
             boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
