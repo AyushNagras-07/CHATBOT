@@ -23,7 +23,7 @@ const Chatbot = () => {
   const chatbotStyle = {
     maxWidth: "100%", // Take full width
     width: "450px", // Default width for laptops
-    height: "80vh", // Adjust height
+    height: "100vh", // Adjust height
     margin: "auto",
     display: "flex",
     flexDirection: "column",
