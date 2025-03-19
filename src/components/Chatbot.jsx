@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from "react";
 import MessageBubble from "./MessageBubble";
 import UserProfile from "./UserProfile";
 import { motion, AnimatePresence } from "framer-motion";
-import { fetchChatResponse, fetchOrderStatus } from "../api/fetch";
 
 const predefinedMessages = [
   "Where is my order?",
@@ -28,7 +27,7 @@ const Chatbot = () => {
     localStorage.setItem("darkMode", isDarkMode);
   }, [isDarkMode]);
 
-  const handleSend = async () => {
+  const handleSend = () => {
     const message = input.trim();
     if (!message) return;
 
@@ -36,39 +35,24 @@ const Chatbot = () => {
     setInput("");
     setIsTyping(true);
 
-    try {
-      // Send the message to backend API
-      const response = await fetchChatResponse(message);
-      
-      setTimeout(() => {
-        setMessages((prev) => [...prev, { text: response.message, isUser: false }]);
-        setIsTyping(false);
-      }, 1000);
-    } catch (error) {
-      console.error("Error getting response:", error);
-      setTimeout(() => {
-        setMessages((prev) => [...prev, { text: "Sorry, I'm having trouble connecting to the server.", isUser: false }]);
-        setIsTyping(false);
-      }, 1000);
-    }
+    setTimeout(() => {
+      handleBotResponse(message);
+    }, 1000);
   };
 
-  const handleOrderQuery = async (orderId) => {
-    try {
-      // Fetch specific order information
-      const orderData = await fetchOrderStatus(orderId);
-      
-      setTimeout(() => {
-        setMessages((prev) => [...prev, { text: `Order #${orderId}: ${orderData.status}. ${orderData.details}`, isUser: false }]);
-        setIsTyping(false);
-      }, 1000);
-    } catch (error) {
-      console.error("Error fetching order:", error);
-      setTimeout(() => {
-        setMessages((prev) => [...prev, { text: "Sorry, I couldn't find information about that order.", isUser: false }]);
-        setIsTyping(false);
-      }, 1000);
-    }
+  const handleBotResponse = (userMessage) => {
+    let response = "Sorry, I didn't understand that.";
+    const lowerMessage = userMessage.toLowerCase();
+
+    if (lowerMessage.includes("order") || lowerMessage.includes("status")) response = "You can track your order using your order ID.";
+    else if (lowerMessage.includes("refund")) response = "Refunds take 5-7 business days.";
+    else if (lowerMessage.includes("return")) response = "To return an order, go to your order history and select 'Return'.";
+    else if (lowerMessage.includes("label")) response = "To generate a return label, visit the returns section in your account.";
+
+    setTimeout(() => {
+      setMessages((prev) => [...prev, { text: response, isUser: false }]);
+      setIsTyping(false);
+    }, 1000);
   };
 
   useEffect(() => {
@@ -76,6 +60,8 @@ const Chatbot = () => {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   }, [messages]);
+
+  
 
   return (
     <motion.div
