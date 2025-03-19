@@ -151,7 +151,7 @@ const Chatbot = () => {
             color: isDarkMode ? "#fff" : "#333",
             fontWeight: "600"
           }}>
-            Chatbot Shanks
+            Chatbot Team-shanks
           </h2>
         </div>
 
