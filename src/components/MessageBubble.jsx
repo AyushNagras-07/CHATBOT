@@ -16,7 +16,7 @@ const MessageBubble = ({ text, isUser, isDarkMode }) => {
     >
       <div
         style={{
-          maxWidth: "70%",
+          maxWidth: "90%",
           padding: "10px 15px",
           borderRadius: "15px",
           background: isUser ? (isDarkMode ? "#007bff" : "#007bff") : (isDarkMode ? "#404040" : "#e9ecef"),

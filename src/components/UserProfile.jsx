@@ -11,8 +11,9 @@ const UserProfile = ({ user, closeProfile }) => {
       transition={{ duration: 0.3 }}
       style={{
         position: "absolute",
-        top: "55px",
-        right: "10px",
+        top: "70px",
+        right: "0px",
+        transform: "translateX(-50%)", 
         background: "white",
         borderRadius: "10px",
         padding: "15px",
