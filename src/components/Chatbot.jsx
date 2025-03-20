@@ -2,13 +2,9 @@ import React, { useState, useRef, useEffect } from "react";
 import MessageBubble from "./MessageBubble";
 import UserProfile from "./UserProfile";
 import Sidebar from "./sidebar";
-import orders from "./ordersData"; // Import orders data
 import { motion, AnimatePresence } from "framer-motion";
-import { sendUserQuery } from "../api/fetch"; // Import API function
-
 
 const predefinedMessages = [
-  "Where is my order?",
   "What is my refund status?",
   "Can I return my order?",
   "How do I generate a return label?"
@@ -59,15 +55,12 @@ const Chatbot = () => {
     localStorage.setItem("darkMode", isDarkMode);
   }, [isDarkMode]);
 
-  const handleSend = async () => {
+  const handleSend = () => {
     const message = input.trim();
     if (!message) return;
 
     // Log the user's query to the console
     console.log("User query:", message);
-
-    // Send the user's query to the API
-    await sendUserQuery(message);
 
     setMessages((prev) => [...prev, { text: message, isUser: true }]);
     setInput("");
@@ -76,9 +69,6 @@ const Chatbot = () => {
     // Determine response based on predefined questions
     let response;
     switch (message.toLowerCase()) {
-      case "where is my order?":
-        response = `Here are your orders: ${orders.map(order => order.product).join(", ")}.`;
-        break;
       case "what is my refund status?":
         response = "Refunds are processed within 5-7 business days. Please check your email for updates.";
         break;
