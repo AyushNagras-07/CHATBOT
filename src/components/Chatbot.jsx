@@ -278,7 +278,7 @@ const Chatbot = () => {
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
               placeholder="Type your message..."
               style={{
-                width: "90%",
+                flex: 1,
                 padding: "12px 15px",
                 border: "1px solid rgba(0,0,0,0.1)",
                 borderRadius: "25px",
