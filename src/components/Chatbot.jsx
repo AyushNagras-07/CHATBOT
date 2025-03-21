@@ -16,6 +16,7 @@ const Chatbot = () => {
   const [showProfile, setShowProfile] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [showPredefined, setShowPredefined] = useState(true);
   const chatContainerRef = useRef(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
@@ -65,6 +66,7 @@ const Chatbot = () => {
     setMessages((prev) => [...prev, { text: message, isUser: true }]);
     setInput("");
     setIsTyping(true);
+    setShowPredefined(false);
 
     // Determine response based on predefined questions
     let response;
@@ -119,7 +121,7 @@ const Chatbot = () => {
             padding: "15px 20px",
             background: isDarkMode ? "#2d2d2d" : "#f8f9fa",
             borderBottom: "1px solid rgba(0,0,0,0.1)",
-            width: "98%",
+            width: "100%",
             zIndex: 10,
           }}
         >
@@ -137,7 +139,7 @@ const Chatbot = () => {
           <motion.div 
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
-            style={{ cursor: "pointer" }} 
+            style={{ cursor: "pointer", marginRight: "30px" }}
             onClick={() => setShowProfile(!showProfile)}
           >
             <img
@@ -147,7 +149,7 @@ const Chatbot = () => {
                 width: "40px",
                 height: "40px",
                 borderRadius: "50%",
-                border: `2px solid ${isDarkMode ? "#ff4d4d" : "#007bff"}`,
+                border: `4px solid ${isDarkMode ? "#ff4d4d" : "#007bff"}`,
                 transition: "all 0.3s ease",
               }}
             />
@@ -165,8 +167,10 @@ const Chatbot = () => {
             padding: "20px",
             gap: "15px",
             fontFamily: "Söhne, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif",
-            width: "97%",
-            height: "calc(100vh - 180px)", // Adjust based on header and footer height
+            width: "98%",
+            height: "calc(100vh - 180px)",
+            position: "relative",
+            backgroundColor: isDarkMode ? "#121212" : "#f0f0f0",
           }}
         >
           <AnimatePresence>
@@ -176,6 +180,12 @@ const Chatbot = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
+                style={{
+                  alignSelf: msg.isUser ? "flex-end" : "flex-start",
+                  maxWidth: "80%",
+                  wordWrap: "break-word",
+                  overflowWrap: "break-word",
+                }}
               >
                 <MessageBubble text={msg.text} isUser={msg.isUser} isDarkMode={isDarkMode} />
               </motion.div>
@@ -202,6 +212,73 @@ const Chatbot = () => {
               Chatbot is typing
             </motion.div>
           )}
+
+          {/* Floating Predefined Questions and Category Buttons */}
+          {showPredefined && (
+            <div style={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "10px",
+              width: isMobile ? "90%" : "60%",
+            }}>
+              {predefinedMessages.map((msg, index) => (
+                <motion.div
+                  key={index}
+                  whileHover={{ backgroundColor: isDarkMode ? "#333" : "#ddd" }}
+                  style={{
+                    padding: "10px 15px",
+                    borderRadius: "10px",
+                    background: isDarkMode ? "rgba(172, 172, 172, 0.53)" : "rgba(0, 0, 0, 0.05)",
+                    color: isDarkMode ? "#fff" : "#333",
+                    cursor: "pointer",
+                    fontSize: "16px",
+                    fontFamily: "Söhne, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif",
+                    transition: "all 0.3s ease",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                  onClick={() => setInput(msg)}
+                >
+                  {msg}
+                </motion.div>
+              ))}
+
+              {/* Category Buttons */}
+              <div style={{
+                display: "flex",
+                justifyContent: "center",
+                gap: "15px",
+                marginTop: "20px",
+              }}>
+                {["Past Orders", "Order Status", "Returns", "Payment"].map((category, index) => (
+                  <motion.button
+                    key={index}
+                    whileHover={{ scale: 1.05, boxShadow: "0 8px 20px rgba(0, 0, 0, 0.2)" }}
+                    whileTap={{ scale: 0.95 }}
+                    style={{
+                      border: "none",
+                      borderRadius: "25px",
+                      padding: "10px 20px",
+                      background:isDarkMode? "linear-gradient(135deg,rgba(190, 190, 190, 0.7),rgba(160, 159, 161, 0.9))": "linear-gradient(135deg,rgb(219, 211, 211),rgba(163, 159, 168, 0.93))",
+                      color: isDarkMode? "#fff":"#555",
+                      cursor: "pointer",
+                      fontSize: "16px",
+                      fontFamily: "Söhne, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif",
+                      transition: "all 0.3s ease",
+                      boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
+                    }}
+                  >
+                    {category}
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Profile Popup */}
@@ -217,57 +294,20 @@ const Chatbot = () => {
 
         {/* Quick Actions & Input - Fixed at the bottom */}
         <div style={{
-          width: "87.5%",
-          background: isDarkMode ? "#2d2d2d" : "#f8f9fa",
-          borderTop: "1px solid rgba(0,0,0,0.1)",
+          width: "100%",
+          background: "transparent",
           position: "absolute",
           bottom: 0,
-          right: 0,
+          left: 0,
           zIndex: 10,
+          padding: "10px 0",
+          backdropFilter: "blur(10px)",
         }}>
-          {/* Quick Actions */}
-          <div style={{ 
-            padding: "10px 15px", 
-            borderTop: "1px solid rgba(0,0,0,0.1)",
-          }}>
-            {/* Horizontal Scrollable Buttons */}
-            <div style={{
-              display: "flex",
-              gap: "10px",
-              overflowX: "auto",
-              whiteSpace: "nowrap",
-              paddingBottom: "5px",
-              scrollbarWidth: "none",
-              msOverflowStyle: "none"
-            }}>
-              {predefinedMessages.map((msg, index) => (
-                <motion.button
-                  key={index}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setInput(msg)}
-                  style={{
-                    border: "none",
-                    borderRadius: "15px",
-                    padding: "8px 12px",
-                    background: isDarkMode ? "#404040" : "#e9ecef",
-                    color: isDarkMode ? "#fff" : "#333",
-                    cursor: "pointer",
-                    fontSize: "16px",
-                    fontFamily: "Söhne, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif",
-                    transition: "all 0.2s ease",
-                    flexShrink: 0
-                  }}
-                >
-                  {msg}
-                </motion.button>
-              ))}
-            </div>
-          </div>
-          
           {/* Input Box */}
           <div style={{ 
             display: "flex", 
+            justifyContent: "center",
+            alignItems: "center",
             padding: "15px 20px",
             gap: "10px",
             width: "100%",
@@ -279,15 +319,18 @@ const Chatbot = () => {
               placeholder="Type your message..."
               style={{
                 flex: 1,
+                maxWidth: "600px",
                 padding: "12px 15px",
-                border: "1px solid rgba(0,0,0,0.1)",
+                border: "none",
                 borderRadius: "25px",
                 outline: "none",
-                backgroundColor: isDarkMode ? "#404040" : "#fff",
-                color: isDarkMode ? "#fff" : "#333",
+                backgroundColor: "rgba(255, 255, 255, 0.2)",
+                color: isDarkMode ? "#fff" : "#000",
                 fontSize: "16px",
                 fontFamily: "Söhne, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif",
                 transition: "all 0.3s ease",
+                boxShadow: "0 4px 15px rgba(0, 0, 0, 0.1)",
+                backdropFilter: "blur(5px)",
               }}
             />
             <motion.button
@@ -301,7 +344,7 @@ const Chatbot = () => {
                 padding: "12px 20px",
                 cursor: "pointer",
                 borderRadius: "25px",
-                fontSize: "18px",
+                fontSize: "16px",
                 fontWeight: "600",
                 transition: "all 0.3s ease",
                 boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
