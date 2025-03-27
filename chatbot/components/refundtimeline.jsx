@@ -1,125 +1,175 @@
-import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import React from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
-const RefundTimeline = ({ status = "pending" }) => {
-  const [step, setStep] = useState(0);
-  const [isFailed, setIsFailed] = useState(false);
+const stages = [
+  { id: 'pending', label: 'Pending' },
+  { id: 'processing', label: 'Processing' },
+  { id: 'completed', label: 'Completed' },
+  { id: 'failed', label: 'Failed' }
+];
 
-  useEffect(() => {
-    if (status === "failed") {
-      setIsFailed(true);
-      setStep(0); // Reset to first step when failed
-      return;
+const getCurrentStageIndex = (status) => {
+  return stages.findIndex(stage => stage.id === status.toLowerCase());
+};
+
+const RefundTimeline = ({ status, isDarkMode }) => {
+  const currentStageIndex = getCurrentStageIndex(status);
+
+  const containerVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.5,
+        staggerChildren: 0.2
+      }
     }
-
-    const interval = setInterval(() => {
-      setStep((prev) => (prev < 5 ? prev + 1 : 5));
-    }, 2000);
-    return () => clearInterval(interval);
-  }, [status]);
-
-  const steps = ["Pending", "Refund Initiated", "Processing", "Approved", "Transferred", "Completed"];
-
-  const getStepColor = (index) => {
-    if (isFailed) {
-      return index === 0 ? "#f44336" : "#888"; // Red for failed step, gray for others
-    }
-    return index <= step ? "#4caf50" : "#888";
   };
 
-  const getProgressBarColor = () => {
-    if (isFailed) return "#f44336"; // Red for failed state
-    return "linear-gradient(to right, #4caf50, #8bc34a)";
+  const itemVariants = {
+    hidden: { opacity: 0, x: -20 },
+    visible: {
+      opacity: 1,
+      x: 0,
+      transition: {
+        duration: 0.5
+      }
+    }
+  };
+
+  const circleVariants = {
+    inactive: {
+      scale: 1,
+      backgroundColor: isDarkMode ? "#404040" : "#e0e0e0",
+      transition: { duration: 0.3 }
+    },
+    active: {
+      scale: 1.2,
+      backgroundColor: "#4CAF50",
+      transition: { duration: 0.3 }
+    },
+    completed: {
+      scale: 1.2,
+      backgroundColor: "#4CAF50",
+      transition: { duration: 0.3 }
+    }
+  };
+
+  const lineVariants = {
+    inactive: {
+      scaleX: 0,
+      backgroundColor: isDarkMode ? "#404040" : "#e0e0e0",
+      transition: { duration: 0.3 }
+    },
+    active: {
+      scaleX: 1,
+      backgroundColor: "#4CAF50",
+      transition: { duration: 0.5 }
+    }
   };
 
   return (
-    <div style={styles.timelineContainer}>
-      {/* Progress Bar Animation */}
-      {!isFailed && (
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '20px',
+        position: 'relative',
+        width: '100%',
+        maxWidth: '600px',
+        margin: '0 auto'
+      }}
+    >
+      {stages.map((stage, index) => (
         <motion.div
+          key={stage.id}
+          variants={itemVariants}
           style={{
-            ...styles.progressBar,
-            width: `${(step / 5) * 100}%`,
-            background: getProgressBarColor(),
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            position: 'relative',
+            zIndex: 1
           }}
-          initial={{ width: 0 }}
-          animate={{ width: `${(step / 5) * 100}%` }}
-          transition={{ duration: 1.5, ease: "easeInOut" }}
-        />
-      )}
-
-      {/* Refund Steps */}
-      <div style={styles.steps}>
-        {steps.map((label, index) => (
+        >
           <motion.div
-            key={index}
+            variants={circleVariants}
+            animate={
+              index < currentStageIndex
+                ? "completed"
+                : index === currentStageIndex
+                ? "active"
+                : "inactive"
+            }
             style={{
-              ...styles.step,
-              color: getStepColor(index),
-              fontWeight: index <= step ? "bold" : "normal",
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: '8px',
+              position: 'relative',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
             }}
-            initial={{ opacity: 0.3 }}
-            animate={{ opacity: index <= step ? 1 : 0.3 }}
-            transition={{ duration: 0.5 }}
           >
-            {label}
-            <motion.div
-              style={{
-                ...styles.circle,
-                backgroundColor: getStepColor(index),
-              }}
-              initial={{ scale: 0.8 }}
-              animate={{ scale: index <= step ? 1.2 : 1 }}
-              transition={{ duration: 0.3 }}
-            />
+            {index < currentStageIndex ? (
+              <motion.span
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2 }}
+                style={{ color: 'white', fontSize: '20px' }}
+              >
+                ✓
+              </motion.span>
+            ) : (
+              <span style={{ color: isDarkMode ? '#fff' : '#333' }}>
+                {index + 1}
+              </span>
+            )}
           </motion.div>
-        ))}
-      </div>
-    </div>
+          <motion.span
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            style={{
+              fontSize: '14px',
+              color: isDarkMode ? '#fff' : '#333',
+              textAlign: 'center',
+              fontWeight: index <= currentStageIndex ? '600' : '400'
+            }}
+          >
+            {stage.label}
+          </motion.span>
+        </motion.div>
+      ))}
+      
+      {/* Connecting lines */}
+      {stages.map((stage, index) => (
+        index < stages.length - 1 && (
+          <motion.div
+            key={`line-${index}`}
+            variants={lineVariants}
+            animate={index < currentStageIndex ? "active" : "inactive"}
+            style={{
+              position: 'absolute',
+              top: '20px',
+              left: `${(index + 1) * 25}%`,
+              width: '50%',
+              height: '2px',
+              transformOrigin: 'left',
+              zIndex: 0
+            }}
+          />
+        )
+      ))}
+    </motion.div>
   );
-};
-
-// Inline Styles
-const styles = {
-  timelineContainer: {
-    width: "80%",
-    maxWidth: "600px",
-    margin: "40px auto",
-    position: "relative",
-    textAlign: "center",
-  },
-  progressBar: {
-    height: "8px",
-    borderRadius: "5px",
-    transition: "width 1.5s ease-in-out",
-    position: "absolute",
-    top: "25px",
-    left: 0,
-    zIndex: -1,
-  },
-  steps: {
-    display: "flex",
-    justifyContent: "space-between",
-    position: "relative",
-    marginTop: "40px",
-  },
-  step: {
-    width: "100px",
-    textAlign: "center",
-    padding: "10px",
-    fontSize: "14px",
-    position: "relative",
-  },
-  circle: {
-    width: "15px",
-    height: "15px",
-    borderRadius: "50%",
-    position: "absolute",
-    top: "-10px",
-    left: "50%",
-    transform: "translateX(-50%)",
-    transition: "background 0.5s",
-  },
 };
 
 export default RefundTimeline;

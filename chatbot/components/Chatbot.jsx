@@ -5,14 +5,27 @@ import Sidebar from "./sidebar";
 import { motion, AnimatePresence } from "framer-motion";
 import orderData from "../data/ordersData";
 import { useNavigate } from "react-router-dom";
+import RefundTimeline from './refundtimeline';
+import { useMediaQuery } from 'react-responsive';
 
 const predefinedMessages = [
   "What is my refund status?",
   "Can I return my order?",
-  "What are the return policy"
 ];
 
+// Add breakpoints
+const breakpoints = {
+  mobile: '(max-width: 768px)',
+  tablet: '(min-width: 769px) and (max-width: 1024px)',
+  desktop: '(min-width: 1025px)'
+};
+
 const Chatbot = () => {
+  // Add media queries
+  const isMobile = useMediaQuery({ query: breakpoints.mobile });
+  const isTablet = useMediaQuery({ query: breakpoints.tablet });
+  const isDesktop = useMediaQuery({ query: breakpoints.desktop });
+
   const [messages, setMessages] = useState([{ text: "Welcome! Ask me about your order.", isUser: false }]);
   const [input, setInput] = useState("");
   const [showProfile, setShowProfile] = useState(false);
@@ -22,7 +35,6 @@ const Chatbot = () => {
   const [pastOrders, setPastOrders] = useState([]);
   const [showOrderSelection, setShowOrderSelection] = useState(false);
   const chatContainerRef = useRef(null);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [orders, setOrders] = useState(orderData);
   const navigate = useNavigate();
 
@@ -47,12 +59,12 @@ const Chatbot = () => {
     navigate("/login");
   };
 
-  // Full-screen chatbot style
+  // Update chatbotStyle to be responsive
   const chatbotStyle = {
     width: "100%",
     height: "100vh",
     display: "flex",
-    flexDirection: "row",
+    flexDirection: isMobile ? "column" : "row",
     overflow: "hidden",
     backgroundColor: isDarkMode ? "rgba(18,18,18)" : "#CDEDF6",
     transition: "all 0.3s ease-in-out",
@@ -62,6 +74,92 @@ const Chatbot = () => {
     right: 0,
     bottom: 0,
     zIndex: 1000,
+  };
+
+  // Update header style
+  const headerStyle = {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: isMobile ? "10px" : "15px 20px",
+    background: isDarkMode ? "#1a1a1a" : "#5EB1BF",
+    borderBottom: "1px solid rgba(0,0,0,0.1)",
+    width: "100%",
+    zIndex: 10,
+  };
+
+  // Update chat container style
+  const chatContainerStyle = {
+    flex: 1,
+    overflowY: "auto",
+    display: "flex",
+    flexDirection: "column",
+    padding: isMobile ? "10px" : "20px",
+    gap: "10px",
+    fontFamily: "Söhne, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif",
+    width: "100%",
+    height: isMobile ? "calc(100vh - 120px)" : "80",
+    marginBottom: isMobile ? "80px" : "6%",
+    position: "relative",
+    backgroundColor: isDarkMode ? "#121212" : "#CDEDF6",
+  };
+
+  // Update input box style
+  const inputBoxStyle = {
+    position: isMobile ? "fixed" : "absolute",
+    bottom: 20,
+    left: isMobile ? "0" : "30%",
+    display: "flex",
+    gap: "10px",
+    zIndex: 10,
+    width: isMobile ? "100%" : "60%",
+    padding: isMobile ? "10px" : "0",
+    backgroundColor: isDarkMode ? "#1a1a1a" : "#CDEDF6",
+  };
+
+  // Update message container style
+  const getMessageContainerStyle = (msg) => ({
+    alignSelf: msg.isUser ? "flex-end" : "flex-start",
+    maxWidth: isMobile ? "90%" : "80%",
+    wordWrap: "break-word",
+    overflowWrap: "break-word",
+  });
+
+  // Update predefined messages container style
+  const predefinedContainerStyle = {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: "translate(-50%, -50%)",
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
+    width: isMobile ? "95%" : "60%",
+  };
+
+  // Update order buttons container style
+  const orderButtonsContainerStyle = {
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
+    marginTop: "10px",
+    width: isMobile ? "100%" : "auto",
+  };
+
+  // Update order button style
+  const orderButtonStyle = {
+    padding: isMobile ? "10px 15px" : "12px 20px",
+    borderRadius: "8px",
+    backgroundColor: isDarkMode ? "#333" : "#fff",
+    color: isDarkMode ? "#fff" : "#333",
+    border: `1px solid ${isDarkMode ? "#444" : "#ddd"}`,
+    cursor: "pointer",
+    transition: "all 0.3s ease",
+    textAlign: "left",
+    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+    fontSize: isMobile ? "14px" : "16px",
+    fontWeight: "500",
+    width: isMobile ? "100%" : "auto",
   };
 
   // Handle window resize for responsiveness
@@ -87,44 +185,51 @@ const Chatbot = () => {
     try {
       const data = JSON.parse(response);
       
-      // If response contains orders
       if (data.orders) {
         setMessages(prev => [
           ...prev,
           { 
-            text: "Here are your past orders. Please select one return or refund:", 
+            text: "Here are your past orders. Please select one:", 
             isUser: false, 
-            isOrderMessage: true, // Use isOrderMessage instead of isOrderSelection
-            orders: data.orders // Attach orders data
+            isOrderMessage: true,
+            orders: data.orders
+          }
+        ]);
+      } else if (data.refundStatus) {
+        setMessages(prev => [
+          ...prev,
+          {
+            text: "Here's your refund status:",
+            isUser: false,
+            isRefundStatus: true,
+            refundStatus: data.refundStatus
           }
         ]);
       } else {
-        // Handle regular text response
         setMessages(prev => [...prev, {
           text: typeof data === 'string' ? data : data.message || response,
           isUser: false
         }]);
       }
     } catch (error) {
-      // If not JSON, treat as regular text
       setMessages(prev => [...prev, {
         text: response,
         isUser: false
       }]);
     }
   };
-  
+
   const fetchBotMessage = (userMessage) => {
     setIsTyping(true);
     const userId = localStorage.getItem('userId');
-    
+
     fetch('https://smart-nhv2.onrender.com/api/nlp/getorder', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ 
-        text: userMessage, 
+      body: JSON.stringify({
+        text: userMessage,
         userId: userId
       }),
     })
@@ -135,9 +240,9 @@ const Chatbot = () => {
       })
       .catch(error => {
         console.error('Error fetching bot message:', error);
-        setMessages(prev => [...prev, { 
-          text: "Sorry, I couldn't process your request. Please try again.", 
-          isUser: false 
+        setMessages(prev => [...prev, {
+          text: "Sorry, I couldn't process your request. Please try again.",
+          isUser: false
         }]);
         setIsTyping(false);
       });
@@ -146,7 +251,7 @@ const Chatbot = () => {
   const handleOrderSelection = async (orderId) => {
     try {
       const userId = localStorage.getItem('userId');
-      
+
       if (!userId) {
         throw new Error('User ID not found');
       }
@@ -155,16 +260,16 @@ const Chatbot = () => {
       fetchBotMessage(`Return order ${orderId}`);
     } catch (error) {
       console.error('Error handling order selection:', error);
-      setMessages(prev => [...prev, { 
-        text: "Sorry, I couldn't process your order selection. Please try again.", 
-        isUser: false 
+      setMessages(prev => [...prev, {
+        text: "Sorry, I couldn't process your order selection. Please try again.",
+        isUser: false
       }]);
     }
   };
 
   const handleOrderReturn = async (orderId) => {
     const userId = localStorage.getItem('userId');
-    
+
     try {
       // First, show the user's selection in the chat
       setMessages(prev => [...prev, {
@@ -186,7 +291,7 @@ const Chatbot = () => {
       });
 
       const data = await response.text();
-      
+
       // Show the bot's response
       setMessages(prev => [...prev, {
         text: data,
@@ -228,20 +333,20 @@ const Chatbot = () => {
       recognition.current.lang = 'en-US';          // Set language to English
       recognition.current.interimResults = false;  // Only return final results
       recognition.current.maxAlternatives = 1;     // Return one transcription
-  
+
       // Handle speech recognition results
       recognition.current.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
         setInput(transcript); // Set transcribed text in input field
         setIsListening(false); // Stop listening after transcription
       };
-  
+
       // Stop recognition when user stops speaking
       recognition.current.onspeechend = () => {
         recognition.current.stop();
         setIsListening(false);
       };
-  
+
       // Handle errors
       recognition.current.onerror = (event) => {
         console.error('Speech recognition error:', event.error);
@@ -250,7 +355,7 @@ const Chatbot = () => {
     } else {
       console.warn('Speech recognition not supported in this browser');
     }
-  
+
     // Check for SpeechSynthesis support
     if ('speechSynthesis' in window) {
       setSynthesisSupported(true);
@@ -266,7 +371,7 @@ const Chatbot = () => {
       }
     }
   }, [messages]);
-  
+
   const speak = (text) => {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'en-US';
@@ -281,28 +386,19 @@ const Chatbot = () => {
       animate={{ opacity: 1 }}
       style={chatbotStyle}
     >
-      {/* Sidebar */}
-      <Sidebar
-        onSelect={handleSend}
-        isDarkMode={isDarkMode}
-        toggleDarkMode={() => setIsDarkMode(!isDarkMode)}
-      />
+      {/* Sidebar - Only show on desktop and tablet */}
+      {(isDesktop || isTablet) && (
+        <Sidebar
+          onSelect={handleSend}
+          isDarkMode={isDarkMode}
+          toggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+        />
+      )}
 
       {/* Main Chat Area */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-        {/* Header - Fixed at the top */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            padding: "15px 20px",
-            background: isDarkMode ? "#1a1a1a" : "#5EB1BF",
-            borderBottom: "1px solid rgba(0,0,0,0.1)",
-            width: "100%",
-            zIndex: 10,
-          }}
-        >
+        {/* Header */}
+        <div style={headerStyle}>
           <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
             <h2 style={{
               margin: 0,
@@ -317,9 +413,9 @@ const Chatbot = () => {
           <div style={{ display: "flex", alignItems: "right", gap: "15px" }}>
             <button
               onClick={() => setMuteVoice(!muteVoice)}
-              style={{ 
+              style={{
                 color: isDarkMode ? "#fff" : "#333",
-                marginLeft:800,
+                marginLeft: 800,
                 background: "none",
                 border: "none",
                 cursor: "pointer",
@@ -377,23 +473,10 @@ const Chatbot = () => {
           </div>
         </div>
 
-        {/* Chat Messages - Adjusted to fit above input box */}
+        {/* Chat Messages */}
         <div
           ref={chatContainerRef}
-          style={{
-            flex: 1,
-            overflowY: "auto",
-            display: "flex",
-            flexDirection: "column",
-            padding: "20px",
-            gap: "10px",
-            fontFamily: "Söhne, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif",
-            width: "100%",
-            height:"80",
-            marginBottom:"6%",
-            position: "relative",
-            backgroundColor: isDarkMode ? "#121212" : "#CDEDF6",
-          }}
+          style={chatContainerStyle}
         >
           <AnimatePresence>
             {messages.map((msg, index) => (
@@ -402,40 +485,36 @@ const Chatbot = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                style={{
-                  alignSelf: msg.isUser ? "flex-end" : "flex-start",
-                  maxWidth: "80%",
-                  wordWrap: "break-word",
-                  overflowWrap: "break-word",
-                }}
+                style={getMessageContainerStyle(msg)}
               >
                 <MessageBubble text={msg.text} isUser={msg.isUser} isDarkMode={isDarkMode} />
                 {msg.isOrderMessage && msg.orders && (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "10px" ,width:"150px",marginLeft:"180px"}}>
+                  <div style={orderButtonsContainerStyle}>
                     {msg.orders.map((order) => (
                       <motion.button
                         key={order.orderId}
                         onClick={() => handleOrderReturn(order.orderId)}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        style={{
-                          padding: "12px 10px",
-                          borderRadius: "8px",
-                          backgroundColor: isDarkMode ? "#333" : "#fff",
-                          color: isDarkMode ? "#fff" : "#333",
-                          border: `1px solid ${isDarkMode ? "#444" : "#ddd"}`,
-                          cursor: "pointer",
-                          transition: "all 0.3s ease",
-                          textAlign: "left",
-                          boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                          fontSize: "16px",
-                          fontWeight: "500"
-                        }}
+                        style={orderButtonStyle}
                       >
-                        Order #{order.orderId}
-                        Item {order.itmes}
+                        <div>
+                          Order #{order.orderId}
+                          <div style={{ 
+                            fontSize: "14px", 
+                            color: isDarkMode ? "#aaa" : "#666",
+                            marginTop: "4px" 
+                          }}>
+                            Item {order.itmes}
+                          </div>
+                        </div>
                       </motion.button>
                     ))}
+                  </div>
+                )}
+                {msg.isRefundStatus && (
+                  <div style={{ marginTop: "10px" }}>
+                    <RefundTimeline status={msg.refundStatus} isDarkMode={isDarkMode} />
                   </div>
                 )}
               </motion.div>
@@ -456,7 +535,7 @@ const Chatbot = () => {
                 display: "flex",
                 alignItems: "center",
                 gap: "5px",
-                marginLeft:170,
+                marginLeft: 170,
               }}
             >
               <span className="typing-indicator">...</span>
@@ -466,16 +545,7 @@ const Chatbot = () => {
 
           {/* Floating Predefined Questions and Category Buttons */}
           {showPredefined && (
-            <div style={{
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              display: "flex",
-              flexDirection: "column",
-              gap: "10px",
-              width: isMobile ? "90%" : "60%",
-            }}>
+            <div style={predefinedContainerStyle}>
               {predefinedMessages.map((msg, index) => (
                 <motion.div
                   key={index}
@@ -504,35 +574,18 @@ const Chatbot = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
-                  style={{
-                    alignSelf: msg.isUser ? "flex-end" : "flex-start",
-                    maxWidth: "80%",
-                    wordWrap: "break-word",
-                    overflowWrap: "break-word",
-                  }}
+                  style={getMessageContainerStyle(msg)}
                 >
                   <MessageBubble text={msg.text} isUser={msg.isUser} isDarkMode={isDarkMode} />
                   {msg.isOrderMessage && msg.orders && (
-                    <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "10px" }}>
+                    <div style={orderButtonsContainerStyle}>
                       {msg.orders.map((order) => (
                         <motion.button
                           key={order.orderId}
                           onClick={() => handleOrderReturn(order.orderId)}
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
-                          style={{
-                            padding: "12px 20px",
-                            borderRadius: "8px",
-                            backgroundColor: isDarkMode ? "#333" : "#fff",
-                            color: isDarkMode ? "#fff" : "#333",
-                            border: `1px solid ${isDarkMode ? "#444" : "#ddd"}`,
-                            cursor: "pointer",
-                            transition: "all 0.3s ease",
-                            textAlign: "center",
-                            boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                            fontSize: "16px",
-                            fontWeight: "500"
-                          }}
+                          style={orderButtonStyle}
                         >
                           Order {order.orderId}
                         </motion.button>
@@ -587,16 +640,8 @@ const Chatbot = () => {
         </AnimatePresence>
 
         {/* Input Box */}
-        <div style={{ 
-          position: "absolute",
-          bottom: 20,
-          left: "30%", // 250px for sidebar + 20px padding
-          display: "flex", 
-          gap: "10px",
-          zIndex: 10,
-          width:"60%",
-        }}>
-            {recognitionSupported && (
+        <div style={inputBoxStyle}>
+          {recognitionSupported && (
             <button
               onClick={() => {
                 if (!isListening) {
@@ -657,4 +702,4 @@ const Chatbot = () => {
   );
 };
 
-export default Chatbot;
+export default Chatbot; 
