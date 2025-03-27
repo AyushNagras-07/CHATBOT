@@ -18,14 +18,14 @@ const Login = () => {
         },
         body: JSON.stringify({ email, password }),
       });
+      const data = await response.json();
+
 
       if (!response.ok) {
-        const errorData = await response.json();
         setError(errorData.error);
         return;
       }
 
-      const data = await response.json();
 
       // Store user data in localStorage
       localStorage.setItem("userId", data.user.id);
