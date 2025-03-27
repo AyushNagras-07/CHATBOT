@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Popup from "./popup";
 import { motion } from "framer-motion";
 
-const Sidebar = ({ isDarkMode, toggleDarkMode }) => {
+const Sidebar = ({ onSelect, isDarkMode, toggleDarkMode }) => {
   const predefinedQuestions = [
     "Return Policy",
     "Refund Policy",
@@ -43,9 +43,13 @@ const Sidebar = ({ isDarkMode, toggleDarkMode }) => {
   ];
 
   const handleHistoryClick = (chat) => {
-    // In a real app, this would load the actual conversation
-    // For now, we'll just add a message indicating which chat was selected
-    onSelect(`Loading previous conversation: ${chat.title}`);
+    // Send the load previous conversation command to the parent component
+    if (typeof onSelect === 'function') {
+      onSelect(`Loading previous conversation: ${chat.title}`);
+      console.log(`Loading previous conversation: ${chat.title}`);
+    } else {
+      console.error("onSelect prop is not a function or not provided", onSelect);
+    }
   };
 
   return (
@@ -148,7 +152,7 @@ const Sidebar = ({ isDarkMode, toggleDarkMode }) => {
               onClick={() => handleSelect(question)}
               style={{
                 padding: "10px",
-                width:"215px",
+                width: "215px",
                 borderRadius: "8px",
                 border: "none",
                 background: isDarkMode ? "#444" : "#e9ecef",
@@ -168,4 +172,4 @@ const Sidebar = ({ isDarkMode, toggleDarkMode }) => {
   );
 };
 
-export default Sidebar;
+export default Sidebar; 
